@@ -5,19 +5,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import android.widget.Toast;
 
-public class SMSReveiver extends BroadcastReceiver {
-
-    // Get the object of SmsManager
-    final SmsManager sms = SmsManager.getDefault();
+public class SMSReceiver extends BroadcastReceiver {
 
     SharedPreferences sp;
 
-    public SMSReveiver() {
+    public SMSReceiver() {
 
     }
 
@@ -33,28 +29,26 @@ public class SMSReveiver extends BroadcastReceiver {
 
                 final Object[] pdusObj = (Object[]) bundle.get("pdus");
 
-                for (int i = 0; i < pdusObj.length; i++) {
+                for (Object aPdusObj : pdusObj) {
 
-                    SmsMessage currentMessage = SmsMessage.createFromPdu((byte[]) pdusObj[i]);
+                    SmsMessage currentMessage = SmsMessage.createFromPdu((byte[]) aPdusObj);
                     String phoneNumber = currentMessage.getDisplayOriginatingAddress();
-
-                    String senderNum = phoneNumber;
                     String message = currentMessage.getDisplayMessageBody();
 
-                    Log.i(AppConfig.TAG, "senderNum: " + senderNum + "; message: " + message);
+                    Log.i(AppConfig.TAG, "senderNum: " + phoneNumber + "; message: " + message);
 
                     // Save New Co-ordinates
-                    if(senderNum.equals(AppConfig.RX_MOBILE_NUMBER)) {
-                        sp = context.getSharedPreferences(AppConfig.TAG, context.MODE_PRIVATE);
+                    if (phoneNumber.equals(AppConfig.RX_MOBILE_NUMBER)) {
+                        sp = context.getSharedPreferences(AppConfig.TAG, Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sp.edit();
-                        if(message.contains(",")) {
+                        if (message.contains(",")) {
                             String[] strs = message.split(",");
                             Float lat = Float.parseFloat(strs[0]);
                             Float lng = Float.parseFloat(strs[1]);
                             editor.putFloat("chLat", lat);
                             editor.putFloat("chLng", lng);
                             editor.commit();
-                            Log.d(AppConfig.TAG, "New Child Location ("+lat+", "+lng+") saved.");
+                            Log.d(AppConfig.TAG, "New Child Location (" + lat + ", " + lng + ") saved.");
                             MapsActivity.updateLocation(lat, lng);
                         } else {
                             Log.e(AppConfig.TAG, "Wrong Message format.");
@@ -65,7 +59,7 @@ public class SMSReveiver extends BroadcastReceiver {
                     // Show Alert
                     int duration = Toast.LENGTH_LONG;
                     Toast toast = Toast.makeText(context,
-                            "senderNum: " + senderNum + ", message: " + message, duration);
+                            "senderNum: " + phoneNumber + ", message: " + message, duration);
                     toast.show();
 
                 }
